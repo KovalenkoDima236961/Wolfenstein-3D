@@ -1,9 +1,6 @@
-package com.example.wolfenstain.games.objects;
+package com.example.wolfenstein.games.objects;
 
 import lombok.Getter;
-
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
 
 @Getter
 public class Player {

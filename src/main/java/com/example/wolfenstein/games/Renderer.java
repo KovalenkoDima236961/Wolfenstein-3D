@@ -1,7 +1,7 @@
-package com.example.wolfenstain.games;
+package com.example.wolfenstein.games;
 
-import com.example.wolfenstain.games.objects.Map;
-import com.example.wolfenstain.games.objects.Player;
+import com.example.wolfenstein.games.objects.Map;
+import com.example.wolfenstein.games.objects.Player;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 

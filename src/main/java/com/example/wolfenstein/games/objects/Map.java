@@ -1,4 +1,4 @@
-package com.example.wolfenstain.games.objects;
+package com.example.wolfenstein.games.objects;
 
 public class Map {
     private final int [][] mapData;

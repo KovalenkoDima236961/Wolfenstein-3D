@@ -1,4 +1,4 @@
-module com.example.wolfenstain {
+module com.example.wolfenstein {
     requires javafx.controls;
     requires javafx.fxml;
 
@@ -7,6 +7,6 @@ module com.example.wolfenstain {
     requires org.kordamp.bootstrapfx.core;
     requires static lombok;
 
-    opens com.example.wolfenstain to javafx.fxml;
-    exports com.example.wolfenstain;
+    opens com.example.wolfenstein to javafx.fxml;
+    exports com.example.wolfenstein;
 }
