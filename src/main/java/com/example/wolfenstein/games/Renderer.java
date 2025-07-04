@@ -1,9 +1,12 @@
 package com.example.wolfenstein.games;
 
+import com.example.wolfenstein.games.objects.Bullet;
 import com.example.wolfenstein.games.objects.Map;
 import com.example.wolfenstein.games.objects.Player;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+
+import java.util.List;
 
 public class Renderer {
     private final int screenWidth;
@@ -14,7 +17,7 @@ public class Renderer {
         this.screenHeight = screenHeight;
     }
 
-    public void render(GraphicsContext gc, Player player, Map map) {
+    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets) {
         // Draw sky
         gc.setFill(Color.LIGHTBLUE);
         gc.fillRect(0, 0, screenWidth, (double) screenHeight / 2);
@@ -114,6 +117,33 @@ public class Renderer {
                 }
             }
         }
+
+        // Draw bullets
+        for (Bullet bullet : bullets)
+            renderBullet(gc, bullet, player, zBuffer);
+    }
+
+    private void renderBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
+        double dx = bullet.getX() - player.getPosX();
+        double dy = bullet.getY() - player.getPosY();
+
+        // Камерні координати
+        double invDet = 1.0 /  (player.getPlaneX() * player.getDirY() - player.getDirX() * player.getPlaneY());
+        double transformX = invDet * (player.getDirY() * dx - player.getDirX() * dy);
+        double transformY = invDet * (-player.getPlaneY() * dx + player.getPlaneX() * dy);
+
+        if (transformY <= 0) return;
+
+        int bulletScreenX = (int) ((screenWidth / 2.0) * (1 + transformX / transformY));
+
+        int bulletSize = (int) Math.max(3, Math.abs(screenHeight / (transformY * 16)));
+
+        int bulletScreenY = screenHeight / 2  - bulletSize / 2;
+
+        if (bulletScreenX >= 0 && bulletScreenX < screenWidth && transformY < zBuffer[bulletScreenX]) {
+            gc.setFill(Color.BLUE);
+            gc.fillOval(bulletScreenX - bulletSize / 2.0, bulletScreenY, bulletSize, bulletSize);
+        }
     }
 
     private void renderEnemy(GraphicsContext gc, Player player, double enemyX, double enemyY, double[] zBuffer) {
@@ -139,7 +169,7 @@ public class Renderer {
 
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
             if (stripe < 0 || stripe >= screenWidth) continue;
-            if (transformY < zBuffer[stripe]) {
+            if (transformY < zBuffer[stripe]) { // Check if the enemy is visible at this column
                 gc.setFill(Color.LIMEGREEN);
                 gc.fillRect(stripe, drawStartY, 1, drawEndY - drawStartY);
             }

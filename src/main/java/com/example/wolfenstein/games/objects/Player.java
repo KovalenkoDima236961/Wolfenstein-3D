@@ -75,29 +75,31 @@ public class Player {
         planeY = oldPlaneX * Math.sin(-rotateSpeed) + planeY * Math.cos(-rotateSpeed);
     }
 
-    public void shoot(Map map) {
-        double rayX = posX;
-        double rayY = posY;
+    public Bullet shoot() {
+//        double rayX = posX;
+//        double rayY = posY;
+//
+//        double stepSize = 0.05;
+//        double maxDistance = 10.0;
+//
+//        for (double distance = 0; distance < maxDistance; distance += stepSize) {
+//            rayX += dirX * stepSize;
+//            rayY += dirY * stepSize;
+//
+//            int mapX = (int) rayX;
+//            int mapY = (int) rayY;
+//
+//            if (map.isWall(mapX, mapY)) {
+//                break;
+//            }
+//
+//            if (map.isEnemy(mapX, mapY)) {
+//                map.removeEnemy(mapX, mapY);
+//                logger.info("🔥 Enemy hit at " + mapX + ", " + mapY);
+//                break;
+//            }
+//        }
 
-        double stepSize = 0.05;
-        double maxDistance = 10.0;
-
-        for (double distance = 0; distance < maxDistance; distance += stepSize) {
-            rayX += dirX * stepSize;
-            rayY += dirY * stepSize;
-
-            int mapX = (int) rayX;
-            int mapY = (int) rayY;
-
-            if (map.isWall(mapX, mapY)) {
-                break;
-            }
-
-            if (map.isEnemy(mapX, mapY)) {
-                map.removeEnemy(mapX, mapY);
-                logger.info("🔥 Enemy hit at " + mapX + ", " + mapY);
-                break;
-            }
-        }
+        return new Bullet(posX, posY, dirX, dirY, 0.005, 10.0);
     }
 }
