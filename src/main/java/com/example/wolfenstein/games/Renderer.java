@@ -15,36 +15,44 @@ public class Renderer {
     }
 
     public void render(GraphicsContext gc, Player player, Map map) {
+        // Draw sky
         gc.setFill(Color.LIGHTBLUE);
         gc.fillRect(0, 0, screenWidth, (double) screenHeight / 2);
 
+        // Draw Floor
         gc.setFill(Color.DARKGRAY);
         gc.fillRect(0, (double) screenHeight / 2, screenWidth, (double) screenHeight / 2);
 
-        for (int x = 0; x < screenWidth; x++) {
-            // Обчислення напряму променя
-            double cameraX = 2 * x / (double) screenWidth - 1; //  нормалізоване значення від -1 (ліво) до +1 (право)
+        double[] zBuffer = new double[screenWidth];
 
-            // фактичний напрям кожного променя, з урахуванням напрямку гравця та FOV.
+        // Simulate what we see if we looked straight ahead, column by column
+        for (int x = 0; x < screenWidth; x++) {
+
+            // Calculate ray direction
+            double cameraX = 2 * x / (double) screenWidth - 1;
             double rayDirX = player.getDirX() + player.getPlaneX() * cameraX;
             double rayDirY = player.getDirY() + player.getPlaneY() * cameraX;
 
             int mapX = (int) player.getPosX();
             int mapY = (int) player.getPosY();
 
-            //  відстань, яку промінь повинен пройти, щоб перетнути наступну сітку по X або Y.
+            // track the distance to the next X or Y gridline from the player's current position
             double sideDistX;
             double sideDistY;
+
+            // tell how far to go in X or Y to cross gridline
             double deltaDistX = (rayDirX == 0) ? 1e30 : Math.abs(1 / rayDirX);
             double deltaDistY = (rayDirY == 0) ? 1e30 : Math.abs(1 / rayDirY);
+
             double perpWallDist;
 
+            // tell which way to go in the grid
             int stepX;
             int stepY;
+
             boolean hit = false;
             int side = 0;
 
-            // Обчислення початкової відстані і напрямку кроку
             if (rayDirX < 0) {
                 stepX = -1;
                 sideDistX = (player.getPosX() - mapX) * deltaDistX;
@@ -61,6 +69,7 @@ public class Renderer {
                 sideDistY = (mapY + 1.0 - player.getPosY()) * deltaDistY;
             }
 
+            // Step to the next nearest gridline (X or Y), whichever is close
             while (!hit) {
                 if (sideDistX < sideDistY) {
                     sideDistX += deltaDistX;
@@ -75,16 +84,19 @@ public class Renderer {
                 if (map.isWall(mapX, mapY)) hit = true;
             }
 
-            // Тут обчислюється реальна відстань до стіни, яка не залежить від кута (перпендикулярна). Це потрібно, щоб уникнути ефекту "риб'ячого ока".
+            // Calculates true straight-line distance to the wall, correcting for the angle
             if (side == 0) {
+                assert rayDirX > 0;
                 perpWallDist = (mapX - player.getPosX() + (double) (1 - stepX) / 2) / rayDirX;
             } else {
+                assert rayDirY > 0;
                 perpWallDist = (mapY - player.getPosY() + (double) (1 - stepY) / 2) / rayDirY;
             }
 
-            // Чим ближче стіна — тим вищою виглядає.
+            zBuffer[x] = perpWallDist;
+
+            // Draw the wall slice
             int lineHeight = (int) (screenHeight / perpWallDist);
-            // Ми відцентровуємо стіну на екрані і обмежуємо межі.
             int drawStart = -lineHeight / 2 + screenHeight / 2;
             if (drawStart < 0) drawStart = 0;
             int drawEnd = lineHeight / 2 + screenHeight / 2;
@@ -93,16 +105,18 @@ public class Renderer {
             gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
             gc.strokeLine(x, drawStart, x, drawEnd);
         }
+
+        // Draw enemy
         for (int y = 0; y < map.getHeight(); y++) {
             for (int x = 0; x < map.getWidth(); x++) {
                 if (map.getTile(x, y) == 2) {
-                    renderEnemy(gc, player, x + 0.5, y + 0.5); // Центр клітинки
+                    renderEnemy(gc, player, x + 0.5, y + 0.5, zBuffer);
                 }
             }
         }
     }
 
-    private void renderEnemy(GraphicsContext gc, Player player, double enemyX, double enemyY) {
+    private void renderEnemy(GraphicsContext gc, Player player, double enemyX, double enemyY, double[] zBuffer) {
         // Вектор від гравця до ворога
         double dx = enemyX - player.getPosX();
         double dy = enemyY - player.getPosY();
@@ -115,16 +129,20 @@ public class Renderer {
         if (transformY <= 0) return;
 
         int spriteScreenX = (int) (((double) screenWidth / 2) * (1 + transformX / transformY));
-
         int spriteHeight = Math.abs((int) (screenHeight / transformY));
         int drawStartY = -spriteHeight / 2 + screenHeight / 2;
         int drawEndY = spriteHeight / 2 + screenHeight / 2;
 
         int spriteWidth = spriteHeight;
-        int drawStartX = -spriteWidth / 2  + spriteScreenX;
+        int drawStartX = -spriteWidth / 2 + spriteScreenX;
         int drawEndX = spriteWidth / 2 + spriteScreenX;
 
-        gc.setFill(Color.LIMEGREEN);
-        gc.fillRect(drawStartX, drawStartY, drawEndX - drawStartX, drawEndY - drawStartY);
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (stripe < 0 || stripe >= screenWidth) continue;
+            if (transformY < zBuffer[stripe]) {
+                gc.setFill(Color.LIMEGREEN);
+                gc.fillRect(stripe, drawStartY, 1, drawEndY - drawStartY);
+            }
+        }
     }
 }

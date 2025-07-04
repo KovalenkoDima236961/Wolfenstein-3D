@@ -11,8 +11,8 @@ import javafx.stage.Stage;
 
 public class Game {
 
-    private final int WIDTH = 1024;
-    private final int HEIGHT = 768;
+    private static final int WIDTH = 1024;
+    private static final int HEIGHT = 768;
 
     private Canvas canvas;
     private GraphicsContext gc;
@@ -27,10 +27,10 @@ public class Game {
 
         map = new Map();
         player = new Player(3.5, 3.5);
-        renderer = new Renderer(WIDTH, HEIGHT);
+        renderer = new Renderer(WIDTH, HEIGHT); // game render
 
         Scene scene = new Scene(new StackPane(canvas));
-        stage.setTitle("Wolf3D FX");
+        stage.setTitle("Wolf 2.5D");
         stage.setScene(scene);
         stage.show();
 
@@ -46,6 +46,7 @@ public class Game {
                 case A -> player.rotateLeft(0.1);
                 case D -> player.rotateRight(0.1);
                 case SPACE -> player.shoot(map);
+                default -> throw new IllegalStateException("Unexpected value: " + e.getCode());
             }
         });
     }
