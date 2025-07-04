@@ -2,21 +2,32 @@ package com.example.wolfenstein.games.objects;
 
 import lombok.Getter;
 
+import java.util.logging.Logger;
+
 @Getter
 public class Player {
-    private double posX, posY;
-    private double dirX, dirY; // Вектор напряму (куди дивиться)
-    private double planeX, planeY; // Вектор камери (права перпендикулярна до напрямку)
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
+    // Player position
+    private double posX;
+    private double posY;
+
+    // Which way the player is looking
+    private double dirX;
+    private double dirY;
+
+    // Defines the width of camera for perspective for FOV
+    private double planeX;
+    private double planeY;
 
     public Player(double startX, double startY) {
         this.posX = startX;
         this.posY = startY;
 
-        // Початковий напрямок (вліво)
+        // faces left
         this.dirX = -1;
         this.dirY = 0;
 
-        // "Камера" для FOV (field of view = ~66 градусів)
         this.planeX = 0;
         this.planeY = 0.66;
     }
@@ -25,16 +36,20 @@ public class Player {
         double newX = posX + dirX * speed;
         double newY = posY + dirY * speed;
 
-        if (!map.isWall((int) newX, (int) newY)) posX = newX;
-        if (!map.isWall((int) newX, (int) newY)) posY = newY;
+        if (!map.isWall((int) newX, (int) newY) || !map.isEnemy((int) newX, (int) newY)) {
+            posX = newX;
+            posY = newY;
+        }
     }
 
-    public void moveBackward(double moveSpeed, Map map) {
-        double newX = posX - dirX * moveSpeed;
-        double newY = posY - dirY * moveSpeed;
+    public void moveBackward(double speed, Map map) {
+        double newX = posX - dirX * speed;
+        double newY = posY - dirY * speed;
 
-        if (!map.isWall((int)newX, (int)posY)) posX = newX;
-        if (!map.isWall((int)posX, (int)newY)) posY = newY;
+        if (!map.isWall((int) newX, (int) newY) || !map.isEnemy((int) newX, (int) newY)) {
+            posX = newX;
+            posY = newY;
+        }
     }
 
     // Rotation of a 2D vector using a rotation matrix
@@ -80,7 +95,7 @@ public class Player {
 
             if (map.isEnemy(mapX, mapY)) {
                 map.removeEnemy(mapX, mapY);
-                System.out.println("🔥 Enemy hit at " + mapX + ", " + mapY);
+                logger.info("🔥 Enemy hit at " + mapX + ", " + mapY);
                 break;
             }
         }

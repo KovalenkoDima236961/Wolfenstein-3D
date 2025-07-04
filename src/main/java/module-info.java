@@ -6,6 +6,7 @@ module com.example.wolfenstein {
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
     requires static lombok;
+    requires java.logging;
 
     opens com.example.wolfenstein to javafx.fxml;
     exports com.example.wolfenstein;
