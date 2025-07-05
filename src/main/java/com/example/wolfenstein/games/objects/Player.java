@@ -21,6 +21,9 @@ public class Player {
     private double planeX;
     private double planeY;
 
+    private double health;
+    private double damage;
+
     public Player(double startX, double startY) {
         this.posX = startX;
         this.posY = startY;

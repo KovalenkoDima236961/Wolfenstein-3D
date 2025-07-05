@@ -18,7 +18,7 @@ public class Renderer {
         this.screenHeight = screenHeight;
     }
 
-    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets, List<Enemy> enemies) {
+    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets, List<Bullet> enemyBullets,List<Enemy> enemies) {
         // Draw sky
         gc.setFill(Color.LIGHTBLUE);
         gc.fillRect(0, 0, screenWidth, (double) screenHeight / 2);
@@ -112,6 +112,7 @@ public class Renderer {
 
         enemies.forEach(enemy -> renderEnemy(gc, player, enemy.getX(), enemy.getY(), zBuffer));
         bullets.forEach(bullet -> renderBullet(gc, bullet, player, zBuffer));
+        enemyBullets.forEach(bullet -> renderEnemyBullet(gc, bullet, player, zBuffer));
     }
 
     private void renderBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
@@ -133,6 +134,29 @@ public class Renderer {
 
         if (bulletScreenX >= 0 && bulletScreenX < screenWidth && transformY < zBuffer[bulletScreenX]) {
             gc.setFill(Color.BLUE);
+            gc.fillOval(bulletScreenX - bulletSize / 2.0, bulletScreenY, bulletSize, bulletSize);
+        }
+    }
+
+    private void renderEnemyBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
+        double dx = bullet.getX() - player.getPosX();
+        double dy = bullet.getY() - player.getPosY();
+
+        // Камерні координати
+        double invDet = 1.0 /  (player.getPlaneX() * player.getDirY() - player.getDirX() * player.getPlaneY());
+        double transformX = invDet * (player.getDirY() * dx - player.getDirX() * dy);
+        double transformY = invDet * (-player.getPlaneY() * dx + player.getPlaneX() * dy);
+
+        if (transformY <= 0) return;
+
+        int bulletScreenX = (int) ((screenWidth / 2.0) * (1 + transformX / transformY));
+
+        int bulletSize = (int) Math.max(3, Math.abs(screenHeight / (transformY * 16)));
+
+        int bulletScreenY = screenHeight / 2  - bulletSize / 2;
+
+        if (bulletScreenX >= 0 && bulletScreenX < screenWidth && transformY < zBuffer[bulletScreenX]) {
+            gc.setFill(Color.RED);
             gc.fillOval(bulletScreenX - bulletSize / 2.0, bulletScreenY, bulletSize, bulletSize);
         }
     }

@@ -22,15 +22,22 @@ public class Game {
     private Canvas canvas;
     private GraphicsContext gc;
 
-    private Map map;
-    private Player player;
     private Renderer renderer;
+
+    private Map map;
+
+    private Player player;
     private final List<Bullet> bullets;
+
     private final List<Enemy> enemies;
+    private final List<Bullet> enemyBullets;
+
+    private static final double DELTA_TIME = 1.0 / 60.0;
 
     public Game() {
         bullets = new ArrayList<>();
         enemies = new ArrayList<>();
+        enemyBullets = new ArrayList<>();
     }
 
     public void start(Stage stage) {
@@ -110,6 +117,34 @@ public class Game {
         enemies.removeAll(enemiesToRemove);
     }
 
+    private void updateEnemyBullets() {
+        List<Bullet> toRemove = new ArrayList<>();
+        for (Bullet bullet : bullets) {
+            bullet.setX(bullet.getX() + bullet.getDirX() * bullet.getSpeed());
+            bullet.setY(bullet.getY() + bullet.getDirY() * bullet.getSpeed());
+
+            int gridX = (int) bullet.getX();
+            int gridY = (int) bullet.getY();
+
+            double dx = bullet.getX() - player.getPosX();
+            double dy = bullet.getY() - player.getPosY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (map.isWall(gridX, gridY) || distance > bullet.getMaxDistance()) {
+                toRemove.add(bullet);
+                continue;
+            }
+
+            double hitDist = 0.25;
+            if (Math.abs(player.getPosX() - bullet.getX()) < hitDist && Math.abs(player.getPosY() - bullet.getY()) < hitDist) {
+                // TODO: Player takes damage
+                System.out.println("Player hit by enemy bullet!");
+                toRemove.add(bullet);
+            }
+        }
+        enemyBullets.removeAll(toRemove);
+    }
+
     private void updateEnemies() {
         for (Enemy enemy : enemies) {
             if (enemy.getState() == DEAD) continue;
@@ -121,7 +156,22 @@ public class Game {
             if (enemyCanSeePlayer(enemy, player, map)) {
                 if(dist < enemy.getAttackRange()) {
                     enemy.setState(ATTACKING);
-                    // TODO: Damage player
+
+                    if (enemy.getShootCooldown() > 0)
+                        enemy.setShootCooldown(enemy.getShootCooldown() - DELTA_TIME);
+
+                    if (enemy.getShootCooldown() <= 0) {
+                        // Enemy shoots at player
+                        double dirX = dx / dist;
+                        double dirY = dy / dist;
+                        enemyBullets.add(new Bullet(
+                                enemy.getX(), enemy.getY(),
+                                dirX, dirY,
+                                0.035, // bullet speed
+                                8.0    // max distance
+                        ));
+                        enemy.setShootCooldown(enemy.getShootInterval());
+                    }
                 } else if (dist < enemy.getChasingRange()) {
                     enemy.setState(EnemyState.CHASING);
 
@@ -177,7 +227,8 @@ public class Game {
                 gc.clearRect(0, 0, WIDTH, HEIGHT);
                 updateEnemies();
                 updateBullets();
-                renderer.render(gc, player, map, bullets,enemies);
+                updateEnemyBullets();
+                renderer.render(gc, player, map, bullets,enemyBullets,enemies);
             }
         }.start();
     }

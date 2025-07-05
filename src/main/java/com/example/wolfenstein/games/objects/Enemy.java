@@ -19,8 +19,11 @@ public class Enemy {
     private double health;
     private double damage;
 
+    private double shootCooldown = 0.0;
+    private double shootInterval = 2.0;
     private double attackRange;
     private double chasingRange;
+
 
     public Enemy(double x, double y) {
         this.x = x;
@@ -29,7 +32,7 @@ public class Enemy {
         this.state = EnemyState.IDLE;
         this.health = 1.0;
         this.damage = 0.1;
-        this.attackRange = 1;
-        this.chasingRange = 3;
+        this.attackRange = 6.0;
+        this.chasingRange = 10.0;
     }
 }
