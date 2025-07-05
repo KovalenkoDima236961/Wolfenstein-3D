@@ -1,6 +1,7 @@
 package com.example.wolfenstein.games;
 
 import com.example.wolfenstein.games.objects.Bullet;
+import com.example.wolfenstein.games.objects.Enemy;
 import com.example.wolfenstein.games.objects.Map;
 import com.example.wolfenstein.games.objects.Player;
 import javafx.scene.canvas.GraphicsContext;
@@ -17,7 +18,7 @@ public class Renderer {
         this.screenHeight = screenHeight;
     }
 
-    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets) {
+    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets, List<Bullet> enemyBullets,List<Enemy> enemies) {
         // Draw sky
         gc.setFill(Color.LIGHTBLUE);
         gc.fillRect(0, 0, screenWidth, (double) screenHeight / 2);
@@ -105,22 +106,33 @@ public class Renderer {
             int drawEnd = lineHeight / 2 + screenHeight / 2;
             if (drawEnd >= screenHeight) drawEnd = screenHeight - 1;
 
-            gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
-            gc.strokeLine(x, drawStart, x, drawEnd);
-        }
-
-        // Draw enemy
-        for (int y = 0; y < map.getHeight(); y++) {
-            for (int x = 0; x < map.getWidth(); x++) {
-                if (map.getTile(x, y) == 2) {
-                    renderEnemy(gc, player, x + 0.5, y + 0.5, zBuffer);
-                }
+            if (map.isDoor(mapX, mapY)) {
+                gc.setStroke(Color.SADDLEBROWN);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            } else if (map.isLockedDoor(mapX, mapY)) {
+                gc.setStroke(Color.PURPLE);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            } else if (map.isExit(mapX, mapY)) {
+                gc.setStroke(Color.GOLD);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            } else if (map.isKey(mapX, mapY)) {
+                gc.setFill(Color.GOLD);
+                gc.fillOval(x, drawStart, x, drawEnd);
+            } else if (map.isHealth(mapX, mapY)) {
+                gc.setFill(Color.GREEN);
+                gc.fillOval(x, drawStart, x, drawEnd);
+            } else if (map.isAmmo(mapX, mapY)) {
+                gc.setFill(Color.DEEPSKYBLUE);
+                gc.fillOval(x, drawStart, x, drawEnd);
+            } else {
+                gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
+                gc.strokeLine(x, drawStart, x, drawEnd);
             }
         }
 
-        // Draw bullets
-        for (Bullet bullet : bullets)
-            renderBullet(gc, bullet, player, zBuffer);
+        enemies.forEach(enemy -> renderEnemy(gc, player, enemy.getX(), enemy.getY(), zBuffer));
+        bullets.forEach(bullet -> renderBullet(gc, bullet, player, zBuffer));
+        enemyBullets.forEach(bullet -> renderEnemyBullet(gc, bullet, player, zBuffer));
     }
 
     private void renderBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
@@ -142,6 +154,29 @@ public class Renderer {
 
         if (bulletScreenX >= 0 && bulletScreenX < screenWidth && transformY < zBuffer[bulletScreenX]) {
             gc.setFill(Color.BLUE);
+            gc.fillOval(bulletScreenX - bulletSize / 2.0, bulletScreenY, bulletSize, bulletSize);
+        }
+    }
+
+    private void renderEnemyBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
+        double dx = bullet.getX() - player.getPosX();
+        double dy = bullet.getY() - player.getPosY();
+
+        // Камерні координати
+        double invDet = 1.0 /  (player.getPlaneX() * player.getDirY() - player.getDirX() * player.getPlaneY());
+        double transformX = invDet * (player.getDirY() * dx - player.getDirX() * dy);
+        double transformY = invDet * (-player.getPlaneY() * dx + player.getPlaneX() * dy);
+
+        if (transformY <= 0) return;
+
+        int bulletScreenX = (int) ((screenWidth / 2.0) * (1 + transformX / transformY));
+
+        int bulletSize = (int) Math.max(3, Math.abs(screenHeight / (transformY * 16)));
+
+        int bulletScreenY = screenHeight / 2  - bulletSize / 2;
+
+        if (bulletScreenX >= 0 && bulletScreenX < screenWidth && transformY < zBuffer[bulletScreenX]) {
+            gc.setFill(Color.RED);
             gc.fillOval(bulletScreenX - bulletSize / 2.0, bulletScreenY, bulletSize, bulletSize);
         }
     }
