@@ -115,6 +115,15 @@ public class Renderer {
             } else if (map.isExit(mapX, mapY)) {
                 gc.setStroke(Color.GOLD);
                 gc.strokeLine(x, drawStart, x, drawEnd);
+            } else if (map.isKey(mapX, mapY)) {
+                gc.setFill(Color.GOLD);
+                gc.fillOval(x, drawStart, x, drawEnd);
+            } else if (map.isHealth(mapX, mapY)) {
+                gc.setFill(Color.GREEN);
+                gc.fillOval(x, drawStart, x, drawEnd);
+            } else if (map.isAmmo(mapX, mapY)) {
+                gc.setFill(Color.DEEPSKYBLUE);
+                gc.fillOval(x, drawStart, x, drawEnd);
             } else {
                 gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
                 gc.strokeLine(x, drawStart, x, drawEnd);

@@ -80,12 +80,14 @@ public class Game {
             switch (e.getCode()) {
                 case W -> {
                     player.moveForward(0.1, map, enemies);
+                    checkCollectibles();
                     if (map.isExit((int)player.getPosX(), (int)player.getPosY())) {
                         System.out.println("Level Complete! Proceed to next level..");
                     }
                 }
                 case S -> {
                     player.moveBackward(0.1, map, enemies);
+                    checkCollectibles();
                     if (map.isExit((int)player.getPosX(), (int)player.getPosY())) {
                         System.out.println("Level Complete! Proceed to next level..");
                     }
@@ -99,14 +101,42 @@ public class Game {
         });
     }
 
+    private void checkCollectibles() {
+        int px = (int) player.getPosX();
+        int py = (int) player.getPosY();
+
+        if (map.isKey(px, py)) {
+            player.setKeys(player.getKeys() + 1);
+            map.collectItem(px, py);
+            System.out.println("Picked up a key! Keys: " + player.getKeys());
+        }
+
+        if (map.isHealth(px, py)) {
+            player.setHealth(Math.min(1.0, player.getHealth() + 0.5));
+            map.collectItem(px, py);
+            System.out.println("Picked up a health pack! Health: " + player.getHealth());
+        }
+
+        if (map.isAmmo(px, py)) {
+            player.setAmmo(player.getAmmo() + 5);
+            map.collectItem(px, py);
+            System.out.println("Picked up a ammo pack! Ammo: " + player.getAmmo());
+        }
+    }
+
     private void tryOpenDoor() {
         int facingX = (int)(player.getPosX() + player.getDirX());
         int facingY = (int)(player.getPosY() + player.getDirY());
         if (map.isDoor(facingX, facingY)) {
             map.openDoor(facingX, facingY);
         } else if (map.isLockedDoor(facingX, facingY)) {
-            // TODO: We need to implement logic with key
-            map.unlockDoor(facingX, facingY);
+            if (player.getKeys() > 0) {
+                map.unlockDoor(facingX, facingY);
+                player.setKeys(player.getKeys() - 1);
+                System.out.println("Unlocked a door! Remaining keys: " + player.getKeys());
+            } else {
+                System.out.println("Need a key to open this door!");
+            }
         }
     }
 

@@ -4,7 +4,7 @@ public class Map {
     private final int [][] mapData;
 
     public Map() {
-        // // 0 = empty, 1 = wall, 2 = enemy, 3 = closed door, 4 = exit, 5 = locked door
+        // // 0 = empty, 1 = wall, 2 = enemy, 3 = closed door, 4 = exit, 5 = locked door, 6 = Key, 7 = Health Pack, 8 = Ammo
         this.mapData = new int[][]{
                 {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
                 {1,0,0,0,0,3,0,1,0,0,0,0,2,0,0,1},
@@ -44,9 +44,6 @@ public class Map {
         return mapData.length;
     }
 
-    public boolean isEnemy(int x, int y) {
-        return getTile(x, y) == 2;
-    }
 
     public void removeEnemy(int x, int y) {
         if (getTile(x, y) == 2) {
@@ -54,17 +51,15 @@ public class Map {
         }
     }
 
-    public boolean isDoor(int x, int y) {
-        return getTile(x, y) == 3;
+    public boolean isEnemy(int x, int y) {
+        return getTile(x, y) == 2;
     }
-
-    public boolean isLockedDoor(int x, int y) {
-        return getTile(x, y) == 5;
-    }
-
-    public boolean isExit(int x, int y) {
-        return getTile(x, y) == 4;
-    }
+    public boolean isDoor(int x, int y) { return getTile(x, y) == 3; }
+    public boolean isExit(int x, int y) { return getTile(x, y) == 4; }
+    public boolean isLockedDoor(int x, int y) { return getTile(x, y) == 5; }
+    public boolean isKey(int x, int y) { return getTile(x, y) == 6; }
+    public boolean isHealth(int x, int y) { return getTile(x, y) == 7; }
+    public boolean isAmmo(int x, int y) { return getTile(x, y) == 8; }
 
     public void openDoor(int x, int y) {
         if (isDoor(x, y)) mapData[y][x] = 0;
@@ -73,4 +68,9 @@ public class Map {
     public void unlockDoor(int x, int y) {
         if (isLockedDoor(x, y)) mapData[y][x] = 3;
     }
+
+    public void collectItem(int x, int y) {
+        if (isKey(x, y) || isHealth(x, y) || isAmmo(x, y)) mapData[y][x] = 0;
+    }
+
 }

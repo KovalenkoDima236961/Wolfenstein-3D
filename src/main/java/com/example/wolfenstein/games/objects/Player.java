@@ -1,11 +1,13 @@
 package com.example.wolfenstein.games.objects;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.logging.Logger;
 
 @Getter
+@Setter
 public class Player {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -23,6 +25,9 @@ public class Player {
 
     private double health;
     private double damage;
+
+    private int keys = 0;
+    private int ammo = 10;
 
     public Player(double startX, double startY) {
         this.posX = startX;
