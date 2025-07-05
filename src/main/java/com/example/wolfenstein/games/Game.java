@@ -11,6 +11,9 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.wolfenstein.games.objects.EnemyState.ATTACKING;
+import static com.example.wolfenstein.games.objects.EnemyState.DEAD;
+
 public class Game {
 
     private static final int WIDTH = 1024;
@@ -109,28 +112,56 @@ public class Game {
 
     private void updateEnemies() {
         for (Enemy enemy : enemies) {
+            if (enemy.getState() == DEAD) continue;
+
             double dx = player.getPosX() - enemy.getX();
             double dy = player.getPosY() - enemy.getY();
             double dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < 5) { // Chasing distance
-                enemy.setState(EnemyState.CHASING);
+            if (enemyCanSeePlayer(enemy, player, map)) {
+                if(dist < enemy.getAttackRange()) {
+                    enemy.setState(ATTACKING);
+                    // TODO: Damage player
+                } else if (dist < enemy.getChasingRange()) {
+                    enemy.setState(EnemyState.CHASING);
 
-                double step = enemy.getSpeed();
-                double moveX = dx / dist * step;
-                double moveY = dy / dist * step;
+                    double step = enemy.getSpeed();
+                    double moveX = dx / dist * step;
+                    double moveY = dy / dist * step;
 
-                double newX = enemy.getX() + moveX;
-                if (!map.isWall((int) newX, (int) enemy.getY()) && enemyAt((int) newX, (int) enemy.getY(), enemy))
-                    enemy.setX(newX);
+                    double newX = enemy.getX() + moveX;
+                    if (!map.isWall((int) newX, (int) enemy.getY()) && !enemyAt((int) newX, (int) enemy.getY(), enemy))
+                        enemy.setX(newX);
 
-                double newY = enemy.getY() + moveY;
-                if (!map.isWall((int) enemy.getX(), (int) newY) && enemyAt((int) enemy.getX(), (int) newY, enemy))
-                    enemy.setY(newY);
+                    double newY = enemy.getY() + moveY;
+                    if (!map.isWall((int) enemy.getX(), (int) newY) && !enemyAt((int) enemy.getX(), (int) newY, enemy))
+                        enemy.setY(newY);
+                }
             } else {
                 enemy.setState(EnemyState.IDLE);
             }
         }
+    }
+
+    private boolean enemyCanSeePlayer(Enemy enemy, Player player, Map map) {
+        double x0 = enemy.getX();
+        double y0 = enemy.getY();
+
+        double x1 = player.getPosX();
+        double y1 = player.getPosY();
+
+        double dx = x1 - x0;
+        double dy = y1 - y0;
+
+        double dist = Math.sqrt(dx * dx + dy * dy);
+
+        int steps = (int) (dist * 10);
+        for (int i = 1; i < steps; i++) {
+            double tx = x0 + dx * i / steps;
+            double ty = y0 + dy * i / steps;
+            if (map.isWall((int) tx, (int) ty)) return false;
+        }
+        return true;
     }
 
     private boolean enemyAt(int x, int y, Enemy self) {

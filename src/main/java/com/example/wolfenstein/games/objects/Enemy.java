@@ -19,6 +19,9 @@ public class Enemy {
     private double health;
     private double damage;
 
+    private double attackRange;
+    private double chasingRange;
+
     public Enemy(double x, double y) {
         this.x = x;
         this.y = y;
@@ -26,5 +29,7 @@ public class Enemy {
         this.state = EnemyState.IDLE;
         this.health = 1.0;
         this.damage = 0.1;
+        this.attackRange = 1;
+        this.chasingRange = 3;
     }
 }
