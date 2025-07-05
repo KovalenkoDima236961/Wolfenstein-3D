@@ -95,8 +95,14 @@ public class Game {
                 case A -> player.rotateLeft(0.1);
                 case D -> player.rotateRight(0.1);
                 case E -> tryOpenDoor();
-                case SPACE -> bullets.add(player.shoot());
-                default -> throw new IllegalStateException("Unexpected value: " + e.getCode());
+                case SPACE -> {
+                    var bullet = player.shoot();
+                    if (bullet != null)
+                        bullets.add(player.shoot());
+                }
+                default -> {
+                    return;
+                }
             }
         });
     }
@@ -301,6 +307,7 @@ public class Game {
                 updateBullets();
                 updateEnemyBullets();
                 renderer.render(gc, player, map, bullets,enemyBullets,enemies);
+                renderer.renderHUD(gc, player);
             }
         }.start();
     }

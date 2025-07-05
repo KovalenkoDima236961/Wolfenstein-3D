@@ -29,6 +29,10 @@ public class Player {
     private int keys = 0;
     private int ammo = 10;
 
+    private int level = 1;
+    private int score = 0;
+    private int lives = 3;
+
     public Player(double startX, double startY) {
         this.posX = startX;
         this.posY = startY;
@@ -103,6 +107,10 @@ public class Player {
     }
 
     public Bullet shoot() {
-        return new Bullet(posX, posY, dirX, dirY, 0.02, 10.0);
+        if (ammo > 0) {
+            ammo--;
+            return new Bullet(posX, posY, dirX, dirY, 0.02, 10.0);
+        }
+        return null;
     }
 }
