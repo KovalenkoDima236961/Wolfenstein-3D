@@ -30,9 +30,13 @@ public class Enemy {
         this.y = y;
         this.speed = 0.025;
         this.state = EnemyState.IDLE;
-        this.health = 1.0;
+        this.health = 20.0;
         this.damage = 0.1;
         this.attackRange = 6.0;
         this.chasingRange = 10.0;
+    }
+
+    public boolean isDead() {
+        return health <= 0;
     }
 }

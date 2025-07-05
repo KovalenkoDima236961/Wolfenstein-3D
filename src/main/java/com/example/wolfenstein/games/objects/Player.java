@@ -34,6 +34,17 @@ public class Player {
 
         this.planeX = 0;
         this.planeY = 0.66;
+
+        this.health = 100;
+        this.damage = 1.0f;
+    }
+
+    public boolean isDead() {
+        return health <= 0;
+    }
+
+    public void takeDamage(double amount) {
+        health -= amount;
     }
 
     public void moveForward(double speed, Map map, List<Enemy> enemyList) {
@@ -87,6 +98,6 @@ public class Player {
     }
 
     public Bullet shoot() {
-        return new Bullet(posX, posY, dirX, dirY, 0.005, 10.0);
+        return new Bullet(posX, posY, dirX, dirY, 0.02, 10.0);
     }
 }

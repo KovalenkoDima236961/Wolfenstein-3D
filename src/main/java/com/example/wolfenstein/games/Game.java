@@ -2,9 +2,11 @@ package com.example.wolfenstein.games;
 
 import com.example.wolfenstein.games.objects.*;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
@@ -18,6 +20,7 @@ public class Game {
 
     private static final int WIDTH = 1024;
     private static final int HEIGHT = 768;
+    private static final double DELTA_TIME = 1.0 / 60.0;
 
     private Canvas canvas;
     private GraphicsContext gc;
@@ -32,7 +35,8 @@ public class Game {
     private final List<Enemy> enemies;
     private final List<Bullet> enemyBullets;
 
-    private static final double DELTA_TIME = 1.0 / 60.0;
+    private boolean gameOver = false;
+
 
     public Game() {
         bullets = new ArrayList<>();
@@ -72,6 +76,7 @@ public class Game {
 
     private void setupInput(Scene scene) {
         scene.setOnKeyPressed(e -> {
+            if (gameOver) return;
             switch (e.getCode()) {
                 case W -> player.moveForward(0.1, map, enemies);
                 case S -> player.moveBackward(0.1, map, enemies);
@@ -107,14 +112,14 @@ public class Game {
             // Check collision with any enemy
             for (Enemy enemy : enemies) {
                 if ((int)enemy.getX() == gridX && (int)enemy.getY() == gridY) {
-                    enemiesToRemove.add(enemy);
+                    enemy.setHealth(enemy.getHealth() - player.getDamage());
                     toRemove.add(bullet);
                     break;
                 }
             }
         }
         bullets.removeAll(toRemove);
-        enemies.removeAll(enemiesToRemove);
+        enemies.removeIf(Enemy::isDead);
     }
 
     private void updateEnemyBullets() {
@@ -137,9 +142,11 @@ public class Game {
 
             double hitDist = 0.25;
             if (Math.abs(player.getPosX() - bullet.getX()) < hitDist && Math.abs(player.getPosY() - bullet.getY()) < hitDist) {
-                // TODO: Player takes damage
-                System.out.println("Player hit by enemy bullet!");
+                player.takeDamage(0.3); // Or enemy.getDamage(), if you want to set it per-enemy
                 toRemove.add(bullet);
+                if (player.isDead()) {
+                    onGameOver();
+                }
             }
         }
         enemyBullets.removeAll(toRemove);
@@ -147,7 +154,7 @@ public class Game {
 
     private void updateEnemies() {
         for (Enemy enemy : enemies) {
-            if (enemy.getState() == DEAD) continue;
+            if (enemy.isDead()) continue;
 
             double dx = player.getPosX() - enemy.getX();
             double dy = player.getPosY() - enemy.getY();
@@ -221,9 +228,23 @@ public class Game {
         return false;
     }
 
+    private void onGameOver() {
+        gameOver = true;
+        System.out.println("GAME OVER");
+
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Game Over");
+            alert.setHeaderText("You died!");
+            alert.setContentText("Better luck next time!");
+            alert.showAndWait();
+        });
+    }
+
     private void startGameLoop() {
         new AnimationTimer() {
             public void handle(long now) {
+                if (gameOver) return;
                 gc.clearRect(0, 0, WIDTH, HEIGHT);
                 updateEnemies();
                 updateBullets();
