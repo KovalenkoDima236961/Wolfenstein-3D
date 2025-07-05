@@ -135,6 +135,78 @@ public class Renderer {
         enemyBullets.forEach(bullet -> renderEnemyBullet(gc, bullet, player, zBuffer));
     }
 
+    public void renderHUD(GraphicsContext gc, Player player) {
+        // --- HUD Layout Constants ---
+        int hudHeight = 64;
+        int sectionWidth = screenWidth / 8;  // Divide HUD into 8 sections
+        int y = screenHeight - hudHeight;
+
+        // --- Draw blue HUD background ---
+        gc.setFill(Color.rgb(11, 39, 132));
+        gc.fillRect(0, y, screenWidth, hudHeight);
+
+        // --- Draw box borders ---
+        gc.setStroke(Color.rgb(190, 208, 255));
+        gc.setLineWidth(3);
+        for (int i = 0; i < 8; i++) {
+            gc.strokeRect(i * sectionWidth, y, sectionWidth, hudHeight);
+        }
+
+        gc.setLineWidth(1);
+
+        // --- Set text font ---
+        gc.setFill(Color.WHITE);
+        gc.setFont(javafx.scene.text.Font.font("Consolas", 24)); // Use pixel font if you have one
+
+        // --- 1. Level ---
+        gc.fillText("LEVEL", sectionWidth * 0 + 12, y + 22);
+        gc.fillText(String.valueOf(player.getLevel()), sectionWidth * 0 + 32, y + 52);
+
+        // --- 2. Score ---
+        gc.fillText("SCORE", sectionWidth * 1 + 8, y + 22);
+        gc.fillText(String.format("%06d", player.getScore()), sectionWidth * 1 + 10, y + 52);
+
+        // --- 3. Lives ---
+        gc.fillText("LIVES", sectionWidth * 2 + 10, y + 22);
+        gc.fillText(String.valueOf(player.getLives()), sectionWidth * 2 + 34, y + 52);
+
+        // --- 4. Face (Player face portrait) ---
+        gc.setFill(Color.rgb(60, 35, 20));
+        gc.fillRect(sectionWidth * 3 + 10, y + 10, sectionWidth - 20, hudHeight - 20);
+        // If you want to draw a player face image, use:
+        // gc.drawImage(faceImage, sectionWidth * 3 + 10, y + 10, sectionWidth - 20, hudHeight - 20);
+
+        // --- 5. Health ---
+        gc.setFill(Color.WHITE);
+        gc.fillText("HEALTH", sectionWidth * 4 + 4, y + 22);
+        gc.fillText(String.format("%3d%%", (int)(player.getHealth() * 100)), sectionWidth * 4 + 16, y + 52);
+
+        // --- 6. Ammo ---
+        gc.fillText("AMMO", sectionWidth * 5 + 18, y + 22);
+        gc.fillText(String.valueOf(player.getAmmo()), sectionWidth * 5 + 38, y + 52);
+
+        // --- 7. Key ---
+        if (player.getKeys() > 0) {
+            gc.setFill(Color.GOLD);
+            // Draw a simple key shape
+            double keyX = sectionWidth * 6 + 26;
+            double keyY = y + 38;
+            gc.fillOval(keyX, keyY, 18, 18);
+            gc.fillRect(keyX + 16, keyY + 6, 16, 6);
+        }
+
+        // --- 8. Weapon (Draw basic gun silhouette or your own image) ---
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(5);
+        double gunX = sectionWidth * 7 + 20;
+        double gunY = y + 28;
+        gc.strokeLine(gunX, gunY, gunX + 30, gunY);
+        gc.strokeLine(gunX + 30, gunY, gunX + 50, gunY + 10);
+        gc.strokeLine(gunX + 20, gunY - 7, gunX + 20, gunY + 15);
+        gc.setLineWidth(1);
+    }
+
+
     private void renderBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
         double dx = bullet.getX() - player.getPosX();
         double dy = bullet.getY() - player.getPosY();
