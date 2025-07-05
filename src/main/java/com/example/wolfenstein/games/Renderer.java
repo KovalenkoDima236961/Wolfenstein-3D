@@ -106,8 +106,19 @@ public class Renderer {
             int drawEnd = lineHeight / 2 + screenHeight / 2;
             if (drawEnd >= screenHeight) drawEnd = screenHeight - 1;
 
-            gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
-            gc.strokeLine(x, drawStart, x, drawEnd);
+            if (map.isDoor(mapX, mapY)) {
+                gc.setStroke(Color.SADDLEBROWN);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            } else if (map.isLockedDoor(mapX, mapY)) {
+                gc.setStroke(Color.PURPLE);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            } else if (map.isExit(mapX, mapY)) {
+                gc.setStroke(Color.GOLD);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            } else {
+                gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
+                gc.strokeLine(x, drawStart, x, drawEnd);
+            }
         }
 
         enemies.forEach(enemy -> renderEnemy(gc, player, enemy.getX(), enemy.getY(), zBuffer));

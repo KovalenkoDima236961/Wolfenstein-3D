@@ -78,19 +78,40 @@ public class Game {
         scene.setOnKeyPressed(e -> {
             if (gameOver) return;
             switch (e.getCode()) {
-                case W -> player.moveForward(0.1, map, enemies);
-                case S -> player.moveBackward(0.1, map, enemies);
+                case W -> {
+                    player.moveForward(0.1, map, enemies);
+                    if (map.isExit((int)player.getPosX(), (int)player.getPosY())) {
+                        System.out.println("Level Complete! Proceed to next level..");
+                    }
+                }
+                case S -> {
+                    player.moveBackward(0.1, map, enemies);
+                    if (map.isExit((int)player.getPosX(), (int)player.getPosY())) {
+                        System.out.println("Level Complete! Proceed to next level..");
+                    }
+                }
                 case A -> player.rotateLeft(0.1);
                 case D -> player.rotateRight(0.1);
+                case E -> tryOpenDoor();
                 case SPACE -> bullets.add(player.shoot());
                 default -> throw new IllegalStateException("Unexpected value: " + e.getCode());
             }
         });
     }
 
+    private void tryOpenDoor() {
+        int facingX = (int)(player.getPosX() + player.getDirX());
+        int facingY = (int)(player.getPosY() + player.getDirY());
+        if (map.isDoor(facingX, facingY)) {
+            map.openDoor(facingX, facingY);
+        } else if (map.isLockedDoor(facingX, facingY)) {
+            // TODO: We need to implement logic with key
+            map.unlockDoor(facingX, facingY);
+        }
+    }
+
     private void updateBullets() {
         List<Bullet> toRemove = new ArrayList<>();
-        List<Enemy> enemiesToRemove = new ArrayList<>();
         for (Bullet bullet : bullets) {
             bullet.setX(bullet.getX() + bullet.getDirX() * bullet.getSpeed());
             bullet.setY(bullet.getY() + bullet.getDirY() * bullet.getSpeed());
