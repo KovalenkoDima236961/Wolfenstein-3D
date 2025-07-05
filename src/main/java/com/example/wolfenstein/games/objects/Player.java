@@ -2,6 +2,7 @@ package com.example.wolfenstein.games.objects;
 
 import lombok.Getter;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 @Getter
@@ -32,24 +33,31 @@ public class Player {
         this.planeY = 0.66;
     }
 
-    public void moveForward(double speed, Map map) {
+    public void moveForward(double speed, Map map, List<Enemy> enemyList) {
         double newX = posX + dirX * speed;
         double newY = posY + dirY * speed;
 
-        if (!map.isWall((int) newX, (int) newY) || !map.isEnemy((int) newX, (int) newY)) {
+        if (!map.isWall((int) newX, (int) posY) && !enemyAt((int)newX, (int)posY, enemyList))
             posX = newX;
+        if (!map.isWall((int) posX, (int) newY) && !enemyAt((int)posX, (int)newY, enemyList))
             posY = newY;
-        }
     }
 
-    public void moveBackward(double speed, Map map) {
+    public void moveBackward(double speed, Map map, List<Enemy> enemyList) {
         double newX = posX - dirX * speed;
         double newY = posY - dirY * speed;
 
-        if (!map.isWall((int) newX, (int) newY) || !map.isEnemy((int) newX, (int) newY)) {
+        if (!map.isWall((int) newX, (int) posY) && !enemyAt((int)newX, (int)posY, enemyList))
             posX = newX;
+        if (!map.isWall((int) posX, (int) newY) && !enemyAt((int)posX, (int)newY, enemyList))
             posY = newY;
-        }
+    }
+
+    private boolean enemyAt(int x, int y, List<Enemy> enemyList) {
+        for (Enemy enemy : enemyList)
+            if ((int)enemy.getX() == x && (int)enemy.getY() == y)
+                return true;
+        return false;
     }
 
     // Rotation of a 2D vector using a rotation matrix
@@ -76,30 +84,6 @@ public class Player {
     }
 
     public Bullet shoot() {
-//        double rayX = posX;
-//        double rayY = posY;
-//
-//        double stepSize = 0.05;
-//        double maxDistance = 10.0;
-//
-//        for (double distance = 0; distance < maxDistance; distance += stepSize) {
-//            rayX += dirX * stepSize;
-//            rayY += dirY * stepSize;
-//
-//            int mapX = (int) rayX;
-//            int mapY = (int) rayY;
-//
-//            if (map.isWall(mapX, mapY)) {
-//                break;
-//            }
-//
-//            if (map.isEnemy(mapX, mapY)) {
-//                map.removeEnemy(mapX, mapY);
-//                logger.info("🔥 Enemy hit at " + mapX + ", " + mapY);
-//                break;
-//            }
-//        }
-
         return new Bullet(posX, posY, dirX, dirY, 0.005, 10.0);
     }
 }

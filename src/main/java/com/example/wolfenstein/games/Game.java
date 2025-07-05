@@ -1,8 +1,6 @@
 package com.example.wolfenstein.games;
 
-import com.example.wolfenstein.games.objects.Bullet;
-import com.example.wolfenstein.games.objects.Map;
-import com.example.wolfenstein.games.objects.Player;
+import com.example.wolfenstein.games.objects.*;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -25,9 +23,11 @@ public class Game {
     private Player player;
     private Renderer renderer;
     private final List<Bullet> bullets;
+    private final List<Enemy> enemies;
 
     public Game() {
         bullets = new ArrayList<>();
+        enemies = new ArrayList<>();
     }
 
     public void start(Stage stage) {
@@ -35,8 +35,9 @@ public class Game {
         gc = canvas.getGraphicsContext2D();
 
         map = new Map();
-        player = new Player(3.5, 3.5);
+        player = new Player(1.5, 1.5);
         renderer = new Renderer(WIDTH, HEIGHT); // game render
+        initEnemy();
 
         Scene scene = new Scene(new StackPane(canvas));
         stage.setTitle("Wolf 2.5D");
@@ -47,11 +48,23 @@ public class Game {
         startGameLoop();
     }
 
+    private void initEnemy() {
+        for (int x = 0; x < map.getHeight(); x++) {
+            for (int y = 0; y < map.getWidth(); y++) {
+                if (map.isEnemy(x, y)) {
+                    enemies.add(new Enemy(x, y));
+                    map.removeEnemy(x, y);
+                }
+            }
+        }
+    }
+
+
     private void setupInput(Scene scene) {
         scene.setOnKeyPressed(e -> {
             switch (e.getCode()) {
-                case W -> player.moveForward(0.1, map);
-                case S -> player.moveBackward(0.1, map);
+                case W -> player.moveForward(0.1, map, enemies);
+                case S -> player.moveBackward(0.1, map, enemies);
                 case A -> player.rotateLeft(0.1);
                 case D -> player.rotateRight(0.1);
                 case SPACE -> bullets.add(player.shoot());
@@ -62,8 +75,8 @@ public class Game {
 
     private void updateBullets() {
         List<Bullet> toRemove = new ArrayList<>();
+        List<Enemy> enemiesToRemove = new ArrayList<>();
         for (Bullet bullet : bullets) {
-            // Move the bullet forward in its direction
             bullet.setX(bullet.getX() + bullet.getDirX() * bullet.getSpeed());
             bullet.setY(bullet.getY() + bullet.getDirY() * bullet.getSpeed());
 
@@ -81,20 +94,59 @@ public class Game {
                 continue;
             }
 
-            if (map.isEnemy(gridX, gridY)) {
-                map.removeEnemy(gridX, gridY);
-                toRemove.add(bullet);
+            // Check collision with any enemy
+            for (Enemy enemy : enemies) {
+                if ((int)enemy.getX() == gridX && (int)enemy.getY() == gridY) {
+                    enemiesToRemove.add(enemy);
+                    toRemove.add(bullet);
+                    break;
+                }
             }
         }
         bullets.removeAll(toRemove);
+        enemies.removeAll(enemiesToRemove);
+    }
+
+    private void updateEnemies() {
+        for (Enemy enemy : enemies) {
+            double dx = player.getPosX() - enemy.getX();
+            double dy = player.getPosY() - enemy.getY();
+            double dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 5) { // Chasing distance
+                enemy.setState(EnemyState.CHASING);
+
+                double step = enemy.getSpeed();
+                double moveX = dx / dist * step;
+                double moveY = dy / dist * step;
+
+                double newX = enemy.getX() + moveX;
+                if (!map.isWall((int) newX, (int) enemy.getY()) && enemyAt((int) newX, (int) enemy.getY(), enemy))
+                    enemy.setX(newX);
+
+                double newY = enemy.getY() + moveY;
+                if (!map.isWall((int) enemy.getX(), (int) newY) && enemyAt((int) enemy.getX(), (int) newY, enemy))
+                    enemy.setY(newY);
+            } else {
+                enemy.setState(EnemyState.IDLE);
+            }
+        }
+    }
+
+    private boolean enemyAt(int x, int y, Enemy self) {
+        for (Enemy other : enemies)
+            if (other != self && (int) other.getX() == x && (int) other.getY() == y)
+                return true;
+        return false;
     }
 
     private void startGameLoop() {
         new AnimationTimer() {
             public void handle(long now) {
                 gc.clearRect(0, 0, WIDTH, HEIGHT);
+                updateEnemies();
                 updateBullets();
-                renderer.render(gc, player, map, bullets);
+                renderer.render(gc, player, map, bullets,enemies);
             }
         }.start();
     }

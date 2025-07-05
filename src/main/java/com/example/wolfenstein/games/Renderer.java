@@ -1,6 +1,7 @@
 package com.example.wolfenstein.games;
 
 import com.example.wolfenstein.games.objects.Bullet;
+import com.example.wolfenstein.games.objects.Enemy;
 import com.example.wolfenstein.games.objects.Map;
 import com.example.wolfenstein.games.objects.Player;
 import javafx.scene.canvas.GraphicsContext;
@@ -17,7 +18,7 @@ public class Renderer {
         this.screenHeight = screenHeight;
     }
 
-    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets) {
+    public void render(GraphicsContext gc, Player player, Map map, List<Bullet> bullets, List<Enemy> enemies) {
         // Draw sky
         gc.setFill(Color.LIGHTBLUE);
         gc.fillRect(0, 0, screenWidth, (double) screenHeight / 2);
@@ -109,18 +110,8 @@ public class Renderer {
             gc.strokeLine(x, drawStart, x, drawEnd);
         }
 
-        // Draw enemy
-        for (int y = 0; y < map.getHeight(); y++) {
-            for (int x = 0; x < map.getWidth(); x++) {
-                if (map.getTile(x, y) == 2) {
-                    renderEnemy(gc, player, x + 0.5, y + 0.5, zBuffer);
-                }
-            }
-        }
-
-        // Draw bullets
-        for (Bullet bullet : bullets)
-            renderBullet(gc, bullet, player, zBuffer);
+        enemies.forEach(enemy -> renderEnemy(gc, player, enemy.getX(), enemy.getY(), zBuffer));
+        bullets.forEach(bullet -> renderBullet(gc, bullet, player, zBuffer));
     }
 
     private void renderBullet(GraphicsContext gc, Bullet bullet, Player player, double[] zBuffer) {
