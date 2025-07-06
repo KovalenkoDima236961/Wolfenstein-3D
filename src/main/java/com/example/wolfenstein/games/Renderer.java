@@ -1,17 +1,21 @@
 package com.example.wolfenstein.games;
 
-import com.example.wolfenstein.games.objects.Bullet;
-import com.example.wolfenstein.games.objects.Enemy;
-import com.example.wolfenstein.games.objects.Map;
-import com.example.wolfenstein.games.objects.Player;
+import com.example.wolfenstein.games.objects.*;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class Renderer {
     private final int screenWidth;
     private final int screenHeight;
+
+    private static final java.util.Map<Integer, Image> wallTextures = new HashMap<>();
 
     public Renderer(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
@@ -124,6 +128,36 @@ public class Renderer {
             } else if (map.isAmmo(mapX, mapY)) {
                 gc.setFill(Color.DEEPSKYBLUE);
                 gc.fillOval(x, drawStart, x, drawEnd);
+            } else if (map.isWall(mapX, mapY)) {
+                int wallType = map.getTile(mapX, mapY);
+                GameObject wallObj = GameObject.fromValue(wallType);
+                if (wallObj != null) {
+                    Image wallImage = wallTextures.computeIfAbsent(
+                            wallType,
+                            id -> new Image(Objects.requireNonNull(
+                                    Renderer.class.getResourceAsStream(wallObj.getImagePathForWalls())
+                            ))
+                    );
+                    int texWidth = (int) wallImage.getWidth();
+                    double wallX;
+                    if (side == 0) {
+                        wallX = player.getPosY() + perpWallDist * rayDirY;
+                    } else {
+                        wallX = player.getPosX() + perpWallDist * rayDirX;
+                    }
+                    wallX -= Math.floor(wallX);
+
+                    int texX = (int)(wallX * texWidth);
+                    if ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) {
+                        texX = texWidth - texX - 1;
+                    }
+
+                    gc.drawImage(
+                            wallImage,
+                            texX, 0, 1, wallImage.getHeight(),  // source rect (1px wide)
+                            x, drawStart, 1, drawEnd - drawStart // dest rect (stretch to screen)
+                    );
+                }
             } else {
                 gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
                 gc.strokeLine(x, drawStart, x, drawEnd);
@@ -136,74 +170,93 @@ public class Renderer {
     }
 
     public void renderHUD(GraphicsContext gc, Player player) {
-        // --- HUD Layout Constants ---
-        int hudHeight = 64;
-        int sectionWidth = screenWidth / 8;  // Divide HUD into 8 sections
+        int hudHeight = 90;
+        int sectionCount = 7; // Level, Score, Lives, Face, Health, Ammo, Weapon
+        int sectionWidth = screenWidth / sectionCount;
         int y = screenHeight - hudHeight;
 
-        // --- Draw blue HUD background ---
+        // Draw blue HUD background
         gc.setFill(Color.rgb(11, 39, 132));
         gc.fillRect(0, y, screenWidth, hudHeight);
 
-        // --- Draw box borders ---
+        // Draw box borders
         gc.setStroke(Color.rgb(190, 208, 255));
         gc.setLineWidth(3);
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < sectionCount; i++) {
             gc.strokeRect(i * sectionWidth, y, sectionWidth, hudHeight);
         }
 
         gc.setLineWidth(1);
 
-        // --- Set text font ---
+        // Set text font
+        gc.setFont(javafx.scene.text.Font.font("Consolas", 32));
         gc.setFill(Color.WHITE);
-        gc.setFont(javafx.scene.text.Font.font("Consolas", 24)); // Use pixel font if you have one
 
-        // --- 1. Level ---
-        gc.fillText("LEVEL", sectionWidth * 0 + 12, y + 22);
-        gc.fillText(String.valueOf(player.getLevel()), sectionWidth * 0 + 32, y + 52);
+        // For each box, compute centerX and centerY (middle of box)
+        double baseY = y;
+        double boxCenterY = baseY + hudHeight / 2.2;
 
-        // --- 2. Score ---
-        gc.fillText("SCORE", sectionWidth * 1 + 8, y + 22);
-        gc.fillText(String.format("%06d", player.getScore()), sectionWidth * 1 + 10, y + 52);
+        // 1. Level
+        drawCenteredText(gc, "LEVEL", sectionWidth * 0.5, baseY + 32);
+        drawCenteredText(gc, String.valueOf(player.getLevel()), sectionWidth * 0.5, boxCenterY + 18);
 
-        // --- 3. Lives ---
-        gc.fillText("LIVES", sectionWidth * 2 + 10, y + 22);
-        gc.fillText(String.valueOf(player.getLives()), sectionWidth * 2 + 34, y + 52);
+        // 2. Score
+        drawCenteredText(gc, "SCORE", sectionWidth * 1.5, baseY + 32);
+        drawCenteredText(gc, String.format("%06d", player.getScore()), sectionWidth * 1.5, boxCenterY + 18);
 
-        // --- 4. Face (Player face portrait) ---
-        gc.setFill(Color.rgb(60, 35, 20));
-        gc.fillRect(sectionWidth * 3 + 10, y + 10, sectionWidth - 20, hudHeight - 20);
-        // If you want to draw a player face image, use:
-        // gc.drawImage(faceImage, sectionWidth * 3 + 10, y + 10, sectionWidth - 20, hudHeight - 20);
+        // 3. Lives
+        drawCenteredText(gc, "LIVES", sectionWidth * 2.5, baseY + 32);
+        drawCenteredText(gc, String.valueOf(player.getLives()), sectionWidth * 2.5, boxCenterY + 18);
 
-        // --- 5. Health ---
-        gc.setFill(Color.WHITE);
-        gc.fillText("HEALTH", sectionWidth * 4 + 4, y + 22);
-        gc.fillText(String.format("%3d%%", (int)(player.getHealth() * 100)), sectionWidth * 4 + 16, y + 52);
-
-        // --- 6. Ammo ---
-        gc.fillText("AMMO", sectionWidth * 5 + 18, y + 22);
-        gc.fillText(String.valueOf(player.getAmmo()), sectionWidth * 5 + 38, y + 52);
-
-        // --- 7. Key ---
-        if (player.getKeys() > 0) {
-            gc.setFill(Color.GOLD);
-            // Draw a simple key shape
-            double keyX = sectionWidth * 6 + 26;
-            double keyY = y + 38;
-            gc.fillOval(keyX, keyY, 18, 18);
-            gc.fillRect(keyX + 16, keyY + 6, 16, 6);
+        // 4. Face (center image in box)
+        try {
+            Image faceImage = new Image(Objects.requireNonNull(Renderer.class.getResourceAsStream("/com/example/wolfenstein/images/hud/character.jpeg")));
+            double faceSize = hudHeight - 18;
+            double faceX = sectionWidth * 3 + (sectionWidth - faceSize) / 2;
+            double faceY = baseY + (hudHeight - faceSize) / 2;
+            gc.drawImage(faceImage, faceX, faceY, faceSize, faceSize);
+        } catch (Exception e) {
+            // fallback: draw a brown box
+            gc.setFill(Color.BROWN);
+            gc.fillRect(sectionWidth * 3 + 8, baseY + 8, sectionWidth - 16, hudHeight - 16);
         }
 
-        // --- 8. Weapon (Draw basic gun silhouette or your own image) ---
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(5);
-        double gunX = sectionWidth * 7 + 20;
-        double gunY = y + 28;
-        gc.strokeLine(gunX, gunY, gunX + 30, gunY);
-        gc.strokeLine(gunX + 30, gunY, gunX + 50, gunY + 10);
-        gc.strokeLine(gunX + 20, gunY - 7, gunX + 20, gunY + 15);
-        gc.setLineWidth(1);
+        // 5. Health
+        gc.setFill(Color.WHITE);
+        drawCenteredText(gc, "HEALTH", sectionWidth * 4.5, baseY + 32);
+        drawCenteredText(gc, String.format("%3d%%", (int)(player.getHealth())), sectionWidth * 4.5, boxCenterY + 18);
+
+        // 6. Ammo
+        drawCenteredText(gc, "AMMO", sectionWidth * 5.5, baseY + 32);
+        drawCenteredText(gc, String.valueOf(player.getAmmo()), sectionWidth * 5.5, boxCenterY + 18);
+
+        // 7. Weapon (center image in last box)
+        try {
+            Image weaponImage = new Image(Objects.requireNonNull(Renderer.class.getResourceAsStream("/com/example/wolfenstein/images/hud/weapon/Pistol.png")));
+            double weaponSize = hudHeight - 24; // a bit smaller for padding
+            double weaponX = sectionWidth * 6 + (sectionWidth - weaponSize) / 2;
+            double weaponY = baseY + (hudHeight - weaponSize) / 2;
+            gc.drawImage(weaponImage, weaponX, weaponY, weaponSize, weaponSize);
+        } catch (Exception e) {
+            // fallback: draw a black gun shape
+            gc.setStroke(Color.BLACK);
+            gc.setLineWidth(6);
+            double gunCenterX = sectionWidth * 6 + sectionWidth / 2.0;
+            double gunY = baseY + hudHeight / 2.0;
+            gc.strokeLine(gunCenterX - 24, gunY - 5, gunCenterX + 28, gunY - 5);
+            gc.strokeLine(gunCenterX + 8, gunY - 17, gunCenterX + 8, gunY + 15);
+            gc.strokeLine(gunCenterX - 6, gunY + 10, gunCenterX + 22, gunY + 16);
+            gc.setLineWidth(1);
+        }
+    }
+
+    private void drawCenteredText(GraphicsContext gc, String text, double centerX, double centerY) {
+        Font font = gc.getFont();
+        Text tempText = new Text(text);
+        tempText.setFont(font);
+        double textWidth = tempText.getLayoutBounds().getWidth();
+        double textHeight = tempText.getLayoutBounds().getHeight();
+        gc.fillText(text, centerX - textWidth / 2, centerY + textHeight / 4);
     }
 
 
