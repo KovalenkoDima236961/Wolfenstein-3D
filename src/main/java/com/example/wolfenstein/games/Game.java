@@ -7,11 +7,14 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.example.wolfenstein.games.objects.EnemyState.ATTACKING;
 import static com.example.wolfenstein.games.objects.EnemyState.DEAD;
@@ -37,6 +40,11 @@ public class Game {
 
     private boolean gameOver = false;
 
+    private double lastUpdateTime = 0;
+    private double currentDeltaTime = 1.0 / 60.0;
+
+    private final Set<KeyCode> pressedKeys = new HashSet<>();
+    private boolean spacePressedLastFrame = false;
 
     public Game() {
         bullets = new ArrayList<>();
@@ -77,34 +85,50 @@ public class Game {
     private void setupInput(Scene scene) {
         scene.setOnKeyPressed(e -> {
             if (gameOver) return;
-            switch (e.getCode()) {
-                case W -> {
-                    player.moveForward(0.1, map, enemies);
-                    checkCollectibles();
-                    if (map.isExit((int)player.getPosX(), (int)player.getPosY())) {
-                        System.out.println("Level Complete! Proceed to next level..");
-                    }
-                }
-                case S -> {
-                    player.moveBackward(0.1, map, enemies);
-                    checkCollectibles();
-                    if (map.isExit((int)player.getPosX(), (int)player.getPosY())) {
-                        System.out.println("Level Complete! Proceed to next level..");
-                    }
-                }
-                case A -> player.rotateLeft(0.1);
-                case D -> player.rotateRight(0.1);
-                case E -> tryOpenDoor();
-                case SPACE -> {
-                    var bullet = player.shoot();
-                    if (bullet != null)
-                        bullets.add(player.shoot());
-                }
-                default -> {
-                    return;
-                }
+            pressedKeys.add(e.getCode());
+
+            if (e.getCode() == KeyCode.E) {
+                tryOpenDoor();
             }
         });
+
+        scene.setOnKeyReleased(e -> pressedKeys.remove(e.getCode()));
+    }
+
+    private void handleInput() {
+        if (pressedKeys.contains(KeyCode.W)) {
+            player.moveForward(2.5 * currentDeltaTime, map, enemies);
+            checkCollectibles();
+            if (map.isExit((int) player.getPosX(), (int) player.getPosY())) {
+                System.out.println("Level Complete! Proceed to next level..");
+            }
+        }
+        if (pressedKeys.contains(KeyCode.S)) {
+            player.moveBackward(2.5 * currentDeltaTime, map, enemies);
+            checkCollectibles();
+            if (map.isExit((int) player.getPosX(), (int) player.getPosY())) {
+                System.out.println("Level Complete! Proceed to next level..");
+            }
+        }
+        if (pressedKeys.contains(KeyCode.A)) {
+            player.rotateLeft(2.0 * currentDeltaTime);
+        }
+        if (pressedKeys.contains(KeyCode.D)) {
+            player.rotateRight(2.0 * currentDeltaTime);
+        }
+
+        // SPACE: Fire one shot per keypress, not autofire
+        if (pressedKeys.contains(KeyCode.SPACE)) {
+            if (!spacePressedLastFrame) {
+                var bullet = player.shoot();
+                if (bullet != null) {
+                    bullets.add(bullet);
+                }
+                spacePressedLastFrame = true;
+            }
+        } else {
+            spacePressedLastFrame = false;
+        }
     }
 
     private void checkCollectibles() {
@@ -302,11 +326,23 @@ public class Game {
         new AnimationTimer() {
             public void handle(long now) {
                 if (gameOver) return;
+                if (lastUpdateTime == 0) lastUpdateTime = now;
+
+                double deltaTime = (now - lastUpdateTime) / 1e9;
+
+                // Clamp deltaTime to max 0.1 (100 ms) for smoothness
+                if (deltaTime > 0.1) deltaTime = 0.1;
+
+                currentDeltaTime = deltaTime;
+                lastUpdateTime = now;
+
+                handleInput();
+
                 gc.clearRect(0, 0, WIDTH, HEIGHT);
                 updateEnemies();
                 updateBullets();
                 updateEnemyBullets();
-                renderer.render(gc, player, map, bullets,enemyBullets,enemies);
+                renderer.render(gc, player, map, bullets, enemyBullets, enemies);
                 renderer.renderWeapon(gc, player);
                 renderer.renderHUD(gc, player);
             }
