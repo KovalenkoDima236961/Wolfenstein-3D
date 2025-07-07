@@ -157,6 +157,13 @@ public class Renderer {
                             texX, 0, 1, wallImage.getHeight(),  // source rect (1px wide)
                             x, drawStart, 1, drawEnd - drawStart // dest rect (stretch to screen)
                     );
+
+                    if (side == 1) {
+                        gc.setGlobalAlpha(0.4);
+                        gc.setFill(Color.BLACK);
+                        gc.fillRect(x, drawStart, 1, drawEnd - drawStart);
+                        gc.setGlobalAlpha(1.0);
+                    }
                 }
             } else {
                 gc.setStroke(side == 0 ? Color.RED : Color.DARKRED);
@@ -168,6 +175,29 @@ public class Renderer {
         bullets.forEach(bullet -> renderBullet(gc, bullet, player, zBuffer));
         enemyBullets.forEach(bullet -> renderEnemyBullet(gc, bullet, player, zBuffer));
     }
+
+    public void renderWeapon(GraphicsContext gc, Player player) {
+        String weaponImagePath = "/com/example/wolfenstein/images/weapons/Jagpistol.png";
+        try {
+            Image weaponImage = new Image(Objects.requireNonNull(Renderer.class.getResourceAsStream(weaponImagePath)));
+            double weaponWidth = screenWidth * 0.30;
+            double weaponHeight = screenHeight * 0.30;
+            double x = (screenWidth - weaponWidth) / 2.0;
+
+            int hudHeight = 90;
+            double y = screenHeight - hudHeight - weaponHeight + 20;
+
+            gc.drawImage(weaponImage, x, y, weaponWidth, weaponHeight);
+        } catch (Exception e) {
+            // fallback
+            gc.setFill(Color.BLACK);
+            int hudHeight = 90;
+            double w = screenWidth * 0.20;
+            double h = screenHeight * 0.15;
+            gc.fillRect((screenWidth - w) / 2.0, screenHeight - hudHeight - h, w, h);
+        }
+    }
+
 
     public void renderHUD(GraphicsContext gc, Player player) {
         int hudHeight = 90;

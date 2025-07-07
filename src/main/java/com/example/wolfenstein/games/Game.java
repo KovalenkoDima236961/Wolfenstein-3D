@@ -307,6 +307,7 @@ public class Game {
                 updateBullets();
                 updateEnemyBullets();
                 renderer.render(gc, player, map, bullets,enemyBullets,enemies);
+                renderer.renderWeapon(gc, player);
                 renderer.renderHUD(gc, player);
             }
         }.start();
