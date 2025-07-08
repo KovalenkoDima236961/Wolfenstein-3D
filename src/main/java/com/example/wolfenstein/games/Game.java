@@ -16,9 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.example.wolfenstein.games.objects.EnemyState.ATTACKING;
-import static com.example.wolfenstein.games.objects.EnemyState.DEAD;
-
 public class Game {
 
     private static final int WIDTH = 1024;
@@ -205,7 +202,7 @@ public class Game {
 
     private void updateEnemyBullets() {
         List<Bullet> toRemove = new ArrayList<>();
-        for (Bullet bullet : bullets) {
+        for (Bullet bullet : enemyBullets) {
             bullet.setX(bullet.getX() + bullet.getDirX() * bullet.getSpeed());
             bullet.setY(bullet.getY() + bullet.getDirY() * bullet.getSpeed());
 
@@ -223,7 +220,7 @@ public class Game {
 
             double hitDist = 0.25;
             if (Math.abs(player.getPosX() - bullet.getX()) < hitDist && Math.abs(player.getPosY() - bullet.getY()) < hitDist) {
-                player.takeDamage(0.3); // Or enemy.getDamage(), if you want to set it per-enemy
+                player.takeDamage(0.3);
                 toRemove.add(bullet);
                 if (player.isDead()) {
                     onGameOver();
@@ -242,21 +239,20 @@ public class Game {
             double dist = Math.sqrt(dx * dx + dy * dy);
 
             if (enemyCanSeePlayer(enemy, player, map)) {
-                if(dist < enemy.getAttackRange()) {
-                    enemy.setState(ATTACKING);
+                if (dist < enemy.getAttackRange()) {
+                    enemy.setState(EnemyState.ATTACKING);
 
                     if (enemy.getShootCooldown() > 0)
                         enemy.setShootCooldown(enemy.getShootCooldown() - DELTA_TIME);
 
                     if (enemy.getShootCooldown() <= 0) {
-                        // Enemy shoots at player
                         double dirX = dx / dist;
                         double dirY = dy / dist;
                         enemyBullets.add(new Bullet(
                                 enemy.getX(), enemy.getY(),
                                 dirX, dirY,
-                                0.035, // bullet speed
-                                8.0    // max distance
+                                0.035,
+                                8.0
                         ));
                         enemy.setShootCooldown(enemy.getShootInterval());
                     }
@@ -274,12 +270,30 @@ public class Game {
                     double newY = enemy.getY() + moveY;
                     if (!map.isWall((int) enemy.getX(), (int) newY) && !enemyAt((int) enemy.getX(), (int) newY, enemy))
                         enemy.setY(newY);
+                } else {
+                    enemy.setState(EnemyState.PATROL);
                 }
             } else {
-                enemy.setState(EnemyState.IDLE);
+                enemy.setState(EnemyState.PATROL);
+            }
+
+            if (enemy.getState() == EnemyState.PATROL) {
+                double patrolStep = enemy.getSpeed() * 0.75;
+                double nextX = enemy.getX() + enemy.getDirX() * patrolStep;
+                double nextY = enemy.getY() + enemy.getDirY() * patrolStep;
+
+                if (!map.isWall((int) nextX, (int) nextY) && !enemyAt((int) nextX, (int) nextY, enemy)) {
+                    enemy.setX(nextX);
+                    enemy.setY(nextY);
+                } else {
+                    enemy.setDirX(-enemy.getDirX());
+                    enemy.setDirY(-enemy.getDirY());
+                }
             }
         }
     }
+
+
 
     private boolean enemyCanSeePlayer(Enemy enemy, Player player, Map map) {
         double x0 = enemy.getX();

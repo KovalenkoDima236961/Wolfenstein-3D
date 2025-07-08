@@ -29,11 +29,14 @@ public class Enemy {
         this.x = x;
         this.y = y;
         this.speed = 0.025;
-        this.state = EnemyState.IDLE;
+        this.state = EnemyState.PATROL;
         this.health = 20.0;
         this.damage = 0.1;
         this.attackRange = 6.0;
         this.chasingRange = 10.0;
+
+        this.dirX = 0;
+        this.dirY = 1;
     }
 
     public boolean isDead() {
